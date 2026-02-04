@@ -959,6 +959,9 @@ export default function App() {
                   onNavigateToSong={handleNavigateToSong}
                   isLiked={selectedSong ? likedSongIds.has(selectedSong.id) : false}
                   onToggleLike={toggleLike}
+                  onPlay={playSong}
+                  isPlaying={isPlaying}
+                  currentSong={currentSong}
                 />
               </div>
             )}
@@ -1086,6 +1089,9 @@ export default function App() {
               onNavigateToSong={handleNavigateToSong}
               isLiked={selectedSong ? likedSongIds.has(selectedSong.id) : false}
               onToggleLike={toggleLike}
+              onPlay={playSong}
+              isPlaying={isPlaying}
+              currentSong={currentSong}
             />
           </div>
         </div>
