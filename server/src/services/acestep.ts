@@ -137,6 +137,7 @@ async function submitToApi(params: GenerationParams): Promise<{ taskId: string }
     use_cot_language: false, // Explicitly disable CoT features that require LLM
     use_cot_metas: false, // Explicitly disable CoT features that require LLM
     lm_backend: params.lmBackend || 'pt',
+    lm_model_path: params.lmModel || undefined,
   };
 
   if (params.duration && params.duration > 0) body.audio_duration = params.duration;
@@ -388,6 +389,7 @@ export interface GenerationParams {
   lmTopP?: number;
   lmNegativePrompt?: string;
   lmBackend?: 'pt' | 'vllm';
+  lmModel?: string;
 
   // Expert Parameters
   referenceAudioUrl?: string;
@@ -675,6 +677,7 @@ async function processGeneration(
     if (params.lmTopP !== undefined) args.push('--lm-top-p', String(params.lmTopP));
     if (params.lmNegativePrompt) args.push('--lm-negative-prompt', params.lmNegativePrompt);
     if (params.lmBackend) args.push('--lm-backend', params.lmBackend);
+    if (params.lmModel) args.push('--lm-model', params.lmModel);
     if (params.useCotMetas === false) args.push('--no-cot-metas');
     if (params.useCotCaption === false) args.push('--no-cot-caption');
     if (params.useCotLanguage === false) args.push('--no-cot-language');

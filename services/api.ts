@@ -234,6 +234,7 @@ export interface GenerationParams {
   lmTopP?: number;
   lmNegativePrompt?: string;
   lmBackend?: 'pt' | 'vllm';
+  lmModel?: string;
 
   // Expert Parameters
   referenceAudioUrl?: string;
@@ -317,6 +318,8 @@ export const generateApi = {
     temperature?: number;
     topK?: number;
     topP?: number;
+    lmModel?: string;
+    lmBackend?: string;
   }, token: string): Promise<{
     success: boolean;
     caption?: string;

@@ -151,6 +151,9 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
   const [inferenceSteps, setInferenceSteps] = useState(12);
   const [inferMethod, setInferMethod] = useState<'ode' | 'sde'>('ode');
   const [lmBackend, setLmBackend] = useState<'pt' | 'vllm'>('pt');
+  const [lmModel, setLmModel] = useState(() => {
+    return localStorage.getItem('ace-lmModel') || 'acestep-5Hz-lm-0.6B';
+  });
   const [shift, setShift] = useState(3.0);
 
   // LM Parameters (under Expert)
@@ -467,6 +470,8 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
         temperature: lmTemperature,
         topK: lmTopK > 0 ? lmTopK : undefined,
         topP: lmTopP,
+        lmModel: lmModel || 'acestep-5Hz-lm-0.6B',
+        lmBackend: lmBackend || 'pt',
       }, token);
 
       if (result.success) {
@@ -764,6 +769,7 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
         audioFormat,
         inferMethod,
         lmBackend,
+        lmModel,
         shift,
         lmTemperature,
         lmCfgScale,
@@ -1606,6 +1612,21 @@ export const CreatePanel: React.FC<CreatePanelProps> = ({
                 <option value="vllm">VLLM (~9.2 GB VRAM)</option>
               </select>
               <p className="text-[10px] text-zinc-500">PT uses less VRAM, VLLM may be faster on powerful GPUs</p>
+            </div>
+
+            {/* LM Model */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">LM Model</label>
+              <select
+                value={lmModel}
+                onChange={(e) => { const v = e.target.value; setLmModel(v); localStorage.setItem('ace-lmModel', v); }}
+                className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs text-zinc-900 dark:text-white focus:outline-none"
+              >
+                <option value="acestep-5Hz-lm-0.6B">0.6B (Lightest, ~0.5 GB VRAM)</option>
+                <option value="acestep-5Hz-lm-1.7B">1.7B (Balanced, ~1.5 GB VRAM)</option>
+                <option value="acestep-5Hz-lm-4B">4B (Best quality, ~4 GB VRAM)</option>
+              </select>
+              <p className="text-[10px] text-zinc-500">Controls the LLM used for lyrics/style enhancement. Auto-downloads if not present.</p>
             </div>
 
             {/* Seed */}

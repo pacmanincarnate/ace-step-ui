@@ -93,6 +93,7 @@ interface GenerateBody {
   lmTopP?: number;
   lmNegativePrompt?: string;
   lmBackend?: 'pt' | 'vllm';
+  lmModel?: string;
 
   // Expert Parameters
   referenceAudioUrl?: string;
@@ -198,6 +199,7 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
       lmTopP,
       lmNegativePrompt,
       lmBackend,
+      lmModel,
       referenceAudioUrl,
       sourceAudioUrl,
       referenceAudioTitle,
@@ -264,6 +266,7 @@ router.post('/', authMiddleware, async (req: AuthenticatedRequest, res: Response
       lmTopP,
       lmNegativePrompt,
       lmBackend,
+      lmModel,
       referenceAudioUrl,
       sourceAudioUrl,
       referenceAudioTitle,
@@ -630,7 +633,7 @@ router.get('/debug/:taskId', authMiddleware, async (req: AuthenticatedRequest, r
 // Format endpoint - uses LLM to enhance style/lyrics
 router.post('/format', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { caption, lyrics, bpm, duration, keyScale, timeSignature, temperature, topK, topP } = req.body;
+    const { caption, lyrics, bpm, duration, keyScale, timeSignature, temperature, topK, topP, lmModel, lmBackend } = req.body;
 
     if (!caption) {
       res.status(400).json({ error: 'Caption/style is required' });
@@ -660,7 +663,11 @@ router.post('/format', authMiddleware, async (req: AuthenticatedRequest, res: Re
     if (temperature !== undefined) args.push('--temperature', String(temperature));
     if (topK && topK > 0) args.push('--top-k', String(topK));
     if (topP !== undefined) args.push('--top-p', String(topP));
+    if (lmModel) args.push('--lm-model', lmModel);
+    if (lmBackend) args.push('--lm-backend', lmBackend);
 
+    console.log(`[Format] Running: ${pythonPath} ${args.join(' ')}`);
+    console.log(`[Format] CWD: ${ACESTEP_DIR}`);
     const result = await new Promise<{ success: boolean; data?: any; error?: string }>((resolve) => {
       const proc = spawn(pythonPath, args, {
         cwd: ACESTEP_DIR,
@@ -678,18 +685,29 @@ router.post('/format', authMiddleware, async (req: AuthenticatedRequest, res: Re
 
       proc.on('close', (code) => {
         if (code === 0 && stdout) {
+          // stdout may contain log lines before the JSON — extract last JSON line
+          const lines = stdout.trim().split('\n');
+          let jsonStr = '';
+          for (let i = lines.length - 1; i >= 0; i--) {
+            if (lines[i].startsWith('{')) { jsonStr = lines[i]; break; }
+          }
           try {
-            const parsed = JSON.parse(stdout);
+            const parsed = JSON.parse(jsonStr || stdout);
             resolve({ success: true, data: parsed });
           } catch {
+            console.error('[Format] Failed to parse stdout:', stdout.slice(0, 500));
             resolve({ success: false, error: 'Failed to parse format result' });
           }
         } else {
-          resolve({ success: false, error: stderr || 'Format failed' });
+          console.error(`[Format] Process exited with code ${code}`);
+          if (stdout) console.error('[Format] stdout:', stdout.slice(0, 1000));
+          if (stderr) console.error('[Format] stderr:', stderr.slice(0, 1000));
+          resolve({ success: false, error: stderr || stdout || `Format process exited with code ${code}` });
         }
       });
 
       proc.on('error', (err) => {
+        console.error('[Format] Spawn error:', err.message);
         resolve({ success: false, error: err.message });
       });
     });
@@ -697,10 +715,11 @@ router.post('/format', authMiddleware, async (req: AuthenticatedRequest, res: Re
     if (result.success && result.data) {
       res.json(result.data);
     } else {
+      console.error('[Format] Python error:', result.error);
       res.status(500).json({ success: false, error: result.error });
     }
   } catch (error) {
-    console.error('Format error:', error);
+    console.error('[Format] Route error:', error);
     res.status(500).json({ error: (error as Error).message });
   }
 });
