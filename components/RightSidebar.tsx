@@ -16,7 +16,7 @@ interface RightSidebarProps {
     onNavigateToProfile?: (username: string) => void;
     onNavigateToSong?: (songId: string) => void;
     isLiked?: boolean;
-    onToggleLike?: (song: Song) => void;
+    onToggleLike?: (songId: string) => void;
     onDelete?: (song: Song) => void;
     onAddToPlaylist?: (song: Song) => void;
     onPlay?: (song: Song) => void;
@@ -335,7 +335,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ song, onClose, onOpe
                                 icon={<Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />}
                                 label={String(song.likeCount || 0)}
                                 active={isLiked}
-                                onClick={() => onToggleLike?.(song)}
+                                onClick={() => onToggleLike?.(song.id)}
                             />
                             <ActionButton icon={<Share2 size={22} />} onClick={() => setShareModalOpen(true)} />
                         </div>
